@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="윤재의 게임 허브 - 다양한 웹 미니게임을 즐겨보세요">
+    <title>윤재의 Arcade | 게임 허브</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&family=Outfit:wght@400;700&family=Noto+Sans+KR:wght@300;400;700&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+    <div class="background-blobs">
+        <div class="blob blob-1"></div>
+        <div class="blob blob-2"></div>
+        <div class="blob blob-3"></div>
+    </div>
+
+    <header>
+        <nav class="glass">
+            <div class="logo">YoonSite</div>
+            <ul>
+                <li><a href="#home">홈</a></li>
+                <li><a href="#about">소개</a></li>
+                <li><a href="#projects">게임 목록</a></li>
+                <li><a href="#contact">문의</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <main>
+        <section id="home" class="hero">
+            <div class="hero-content">
+                <h1 class="reveal-text">윤재가 넣고싶은 <span class="accent">모든 것</span>이 이곳에.</h1>
+                <div class="hero-cta reveal-text delay-2">
+                    <a href="#projects" class="btn btn-primary">게임 시작하기</a>
+                    <a href="#about" class="btn btn-secondary">더 알아보기</a>
+                </div>
+            </div>
+        </section>
+
+        <section id="about" class="about section-padding">
+            <div class="container">
+                <h2 class="section-title">소개</h2>
+                <div class="glass-card">
+                    <p2>넣고싶은 자잘한거 다 넣어봤음</p2>
+                </div>
+            </div>
+        </section>
+
+        <section id="projects" class="projects section-padding">
+            <div class="container">
+                <h2 class="section-title">플레이 가능한 게임</h2>
+                <div class="project-grid">
+                    <div class="project-card glass">
+                        <div class="project-img" style="background: linear-gradient(135deg, #f59e0b, #ef4444);"></div>
+                        <div class="project-info">
+                            <h3>불규칙한 똥 피하기</h3>
+                            <p>불규칙적인 크기의 똥 피하기 게임</p>
+                            <div class="project-tags">
+                                <span>액션</span>
+                                <span>똥</span>
+                            </div>
+                            <button class="btn btn-primary play-btn" data-game="galaxy-runner">지금 플레이</button>
+                        </div>
+                    </div>
+                    <div class="project-card glass">
+                        <div class="project-img" style="background: linear-gradient(135deg, #10b981, #3b82f6);"></div>
+                        <div class="project-info">
+                            <h3>네온 스네이크</h3>
+                            <p>길어지는 뱀을 조종하여 먹이를 먹으세요!</p>
+                            <div class="project-tags">
+                                <span>클래식</span>
+                                <span>네온</span>
+                            </div>
+                            <button class="btn btn-primary play-btn" data-game="snake">지금 플레이</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="contact" class="contact section-padding">
+            <div class="container">
+                <h2 class="section-title">의견 보내기</h2>
+                <div class="contact-card glass-card">
+                    <form id="contact-form">
+                        <div class="form-group">
+                            <label for="name">성함</label>
+                            <input type="text" id="name" placeholder="성함을 입력하세요" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="email">이메일</label>
+                            <input type="email" id="email" placeholder="이메일을 입력하세요" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="message">메시지</label>
+                            <textarea id="message" rows="5" placeholder="게임에 대한 피드백이나 문의사항을 적어주세요" required></textarea>
+                        </div>
+                        <button type="submit" class="btn btn-primary">보내기</button>
+                    </form>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Game Modal -->
+    <div id="game-modal" class="modal">
+        <div class="modal-content glass-card">
+            <span class="close-modal">&times;</span>
+            <div id="game-container">
+                <canvas id="game-canvas"></canvas>
+                <div id="game-overlay" class="overlay">
+                    <div class="overlay-content">
+                        <h2 id="game-title">게임 시작</h2>
+                        <p id="game-instr">방향키 또는 터치로 이동하세요.</p>
+                        <button id="start-btn" class="btn btn-primary">시작</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer class="glass">
+        <p>&copy; 2026 YoonSite All rights reserved.</p>
+    </footer>
+
+    <!-- Refined WWDC25 Liquid Glass SVG Filter (Zero Noise Implementation) -->
+    <svg style="visibility: hidden; position: absolute;" width="0" height="0" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+            <filter id="liquid-glass" x="-10%" y="-10%" width="120%" height="120%" color-interpolation-filters="sRGB">
+                <!-- 1. Chromatic Aberration (RGB Splitting) -->
+                <!-- Extract Channels from SourceGraphic (the backdrop) -->
+                <feColorMatrix in="SourceGraphic" type="matrix" values="1 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 1 0"
+                    result="red" />
+                <feColorMatrix in="SourceGraphic" type="matrix" values="0 0 0 0 0  0 1 0 0 0  0 0 0 0 0  0 0 0 1 0"
+                    result="green" />
+                <feColorMatrix in="SourceGraphic" type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 1 0 0  0 0 0 1 0"
+                    result="blue" />
+
+                <!-- Precise Offset for clean fringing -->
+                <feOffset in="green" dx="2" dy="0" result="green-offset" />
+                <feOffset in="blue" dx="-2" dy="0" result="blue-offset" />
+
+                <!-- Combine channels back cleanly -->
+                <feBlend in="red" in2="green-offset" mode="screen" result="rg" />
+                <feBlend in="rg" in2="blue-offset" mode="screen" result="clean-glass" />
+
+                <!-- 2. Edge Highlight Enhancement (Optional procedural specular without noise) -->
+                <feComponentTransfer in="SourceAlpha" result="edge">
+                    <feFuncA type="linear" slope="0.1" />
+                </feComponentTransfer>
+                <feComposite in="edge" in2="clean-glass" operator="over" />
+            </filter>
+        </defs>
+    </svg>
+
+    <script src="main.js"></script>
+</body>
+
+</html>
