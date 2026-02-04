@@ -4,8 +4,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="윤재의 게임 허브 - 다양한 웹 미니게임을 즐겨보세요">
-    <title>윤재의 Arcade | 게임 허브</title>
+    <meta name="description" content="YoonSite">
+    <title>YoonSite</title>
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -29,7 +29,7 @@
                 <li><a href="#home">홈</a></li>
                 <li><a href="#about">소개</a></li>
                 <li><a href="#projects">게임 목록</a></li>
-                <li><a href="#contact">문의</a></li>
+                <li><a href="#summarizer">AI 요약기</a></li>
             </ul>
         </nav>
     </header>
@@ -86,25 +86,28 @@
             </div>
         </section>
 
-        <section id="contact" class="contact section-padding">
+        <section id="summarizer" class="summarizer section-padding">
             <div class="container">
-                <h2 class="section-title">의견 보내기</h2>
-                <div class="contact-card glass-card">
-                    <form id="contact-form">
-                        <div class="form-group">
-                            <label for="name">성함</label>
-                            <input type="text" id="name" placeholder="성함을 입력하세요" required>
-                        </div>
-                        <div class="form-group">
-                            <label for="email">이메일</label>
-                            <input type="email" id="email" placeholder="이메일을 입력하세요" required>
-                        </div>
-                        <div class="form-group">
-                            <label for="message">메시지</label>
-                            <textarea id="message" rows="5" placeholder="게임에 대한 피드백이나 문의사항을 적어주세요" required></textarea>
-                        </div>
-                        <button type="submit" class="btn btn-primary">보내기</button>
-                    </form>
+                <h2 class="section-title">AI 텍스트 3줄 요약</h2>
+                <div class="summarizer-card glass-card">
+                    <div class="api-key-container">
+                        <label for="gemini-api-key">Gemini API Key</label>
+                        <input type="password" id="gemini-api-key" placeholder="기본 키가 설정되어 있습니다 (비워두면 기본 키 사용)">
+                    </div>
+                    <div class="form-group">
+                        <label for="text-to-summarize">요약할 텍스트</label>
+                        <textarea id="text-to-summarize" rows="8" placeholder="요약하고 싶은 긴 내용을 여기에 붙여넣으세요."></textarea>
+                    </div>
+                    <button id="summarize-btn" class="btn btn-primary">3줄 요약하기</button>
+
+                    <div id="summary-result" class="summary-result" style="display: none;">
+                        <h3>요약 결과</h3>
+                        <div id="summary-content" class="summary-content"></div>
+                    </div>
+                    <div id="loader" class="loader" style="display: none;">
+                        <div class="spinner"></div>
+                        <p>AI가 요약 중입니다...</p>
+                    </div>
                 </div>
             </div>
         </section>

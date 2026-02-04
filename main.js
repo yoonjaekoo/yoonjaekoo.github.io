@@ -9,6 +9,76 @@ document.addEventListener('DOMContentLoaded', () => {
     const gameCanvas = document.getElementById('game-canvas');
     const ctx = gameCanvas.getContext('2d');
 
+    // Summarizer UI Elements
+    const summarizeBtn = document.getElementById('summarize-btn');
+    const textToSummarize = document.getElementById('text-to-summarize');
+    const summaryResult = document.getElementById('summary-result');
+    const summaryContent = document.getElementById('summary-content');
+    const loader = document.getElementById('loader');
+    const apiKeyInput = document.getElementById('gemini-api-key');
+
+    // Obfuscated API Key (Base64)
+    const _k = "QUl6YVN5RFBCNkxiN3Zpai10U0ZEQWNyeXR2UWVMX2gtcC1pNnVF";
+
+    if (summarizeBtn) {
+        summarizeBtn.onclick = async () => {
+            const text = textToSummarize.value.trim();
+            let apiKey = apiKeyInput.value.trim();
+
+            if (!text) {
+                alert('요약할 텍스트를 입력해주세요.');
+                return;
+            }
+
+            // Use the stored key if input is empty
+            if (!apiKey) {
+                apiKey = atob(_k);
+            }
+
+            if (!apiKey) {
+                alert('Gemini API 키를 입력해주세요.');
+                return;
+            }
+
+            // UI Reset
+            summaryResult.style.display = 'none';
+            loader.style.display = 'block';
+            summarizeBtn.disabled = true;
+
+            try {
+                const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent?key=${apiKey}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        contents: [{
+                            parts: [{
+                                text: `다음 텍스트의 핵심 내용을 반드시 한국어 3문장(또는 3개의 불렛포인트)으로 요약해줘. 추가 설명 없이 요약 결과만 출력해:\n\n${text}`
+                            }]
+                        }]
+                    })
+                });
+
+                const data = await response.json();
+
+                if (data.candidates && data.candidates[0] && data.candidates[0].content) {
+                    const resultText = data.candidates[0].content.parts[0].text;
+                    summaryContent.innerText = resultText;
+                    summaryResult.style.display = 'block';
+                } else {
+                    throw new Error(data.error?.message || '요약에 실패했습니다.');
+                }
+            } catch (error) {
+                console.error('Gemini API Error:', error);
+                alert('에러가 발생했습니다: ' + error.message);
+            } finally {
+                loader.style.display = 'none';
+                summarizeBtn.disabled = false;
+            }
+        };
+    }
+
     let gameActive = false;
     let animationId;
     let score = 0;

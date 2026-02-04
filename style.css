@@ -307,40 +307,85 @@ nav ul li a:hover {
     transform: scale(1.05);
 }
 
-/* Contact Section */
-.contact-card {
-    max-width: 600px;
+/* Summarizer Section */
+.summarizer-card {
+    max-width: 800px;
     margin: 0 auto;
 }
 
-.form-group {
+.api-key-container {
     margin-bottom: 1.5rem;
 }
 
-.form-group label {
+.api-key-container label {
     display: block;
     margin-bottom: 0.5rem;
-    font-size: 0.9rem;
-    font-weight: 600;
+    font-size: 0.8rem;
+    color: var(--text-muted);
 }
 
-.form-group input,
-.form-group textarea {
+.api-key-container input {
     width: 100%;
-    padding: 1rem;
-    background: rgba(255, 255, 255, 0.05);
+    padding: 0.6rem 1rem;
+    background: rgba(255, 255, 255, 0.03);
     border: 1px solid var(--glass-border);
-    border-radius: 12px;
+    border-radius: 8px;
     color: white;
-    font-family: inherit;
-    transition: var(--transition-smooth);
+    font-size: 0.85rem;
 }
 
-.form-group input:focus,
-.form-group textarea:focus {
-    outline: none;
-    border-color: var(--accent-color);
-    background: rgba(255, 255, 255, 0.1);
+.summary-result {
+    margin-top: 2rem;
+    padding-top: 2rem;
+    border-top: 1px solid var(--glass-border);
+    animation: fadeIn 0.5s ease;
+}
+
+.summary-result h3 {
+    font-size: 1.2rem;
+    margin-bottom: 1rem;
+    color: var(--accent-color);
+}
+
+.summary-content {
+    background: rgba(255, 255, 255, 0.05);
+    padding: 1.5rem;
+    border-radius: 12px;
+    white-space: pre-wrap;
+    line-height: 1.8;
+}
+
+.loader {
+    margin-top: 2rem;
+    text-align: center;
+}
+
+.spinner {
+    width: 40px;
+    height: 40px;
+    border: 4px solid rgba(255, 255, 255, 0.1);
+    border-left-color: var(--accent-color);
+    border-radius: 50%;
+    margin: 0 auto 1rem;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
 /* Footer & Modal */
