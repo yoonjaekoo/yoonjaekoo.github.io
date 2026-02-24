@@ -103,6 +103,25 @@ h3 {
     transition: var(--transition-smooth);
 }
 
+/* Matching Navbar style for About section */
+.about .glass-card {
+    background: var(--glass-bg);
+    backdrop-filter: blur(12px) contrast(80%) saturate(120%) url(#liquid-glass);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid var(--glass-border);
+    border-radius: 50px;
+    /* Same as navbar */
+    box-shadow: none;
+    padding: 2rem 3rem;
+}
+
+.about .glass-card p2 {
+    font-size: 1.5rem;
+    font-weight: 400;
+    display: block;
+    text-align: center;
+}
+
 .glass-card:hover,
 .project-card:hover {
     border-color: rgba(255, 255, 255, 0.3);
@@ -311,6 +330,12 @@ nav ul li a:hover {
 .summarizer-card {
     max-width: 800px;
     margin: 0 auto;
+    background: var(--glass-bg);
+    backdrop-filter: blur(15px) contrast(85%) saturate(110%) url(#liquid-glass);
+    -webkit-backdrop-filter: blur(15px);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 32px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
 }
 
 .api-key-container {
@@ -326,12 +351,48 @@ nav ul li a:hover {
 
 .api-key-container input {
     width: 100%;
-    padding: 0.6rem 1rem;
+    padding: 0.8rem 1rem;
     background: rgba(255, 255, 255, 0.03);
     border: 1px solid var(--glass-border);
-    border-radius: 8px;
+    border-radius: 12px;
     color: white;
-    font-size: 0.85rem;
+    font-size: 0.9rem;
+    outline: none;
+    transition: var(--transition-smooth);
+}
+
+.api-key-container input:focus,
+.form-group textarea:focus {
+    border-color: var(--accent-color);
+    background: rgba(255, 255, 255, 0.05);
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+}
+
+.form-group {
+    margin-bottom: 2rem;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 0.75rem;
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--text-color);
+}
+
+.form-group textarea {
+    width: 100%;
+    padding: 1.2rem;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid var(--glass-border);
+    border-radius: 16px;
+    color: white;
+    font-size: 1rem;
+    font-family: inherit;
+    line-height: 1.6;
+    resize: vertical;
+    outline: none;
+    transition: var(--transition-smooth);
 }
 
 .summary-result {
