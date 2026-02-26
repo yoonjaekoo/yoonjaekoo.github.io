@@ -111,8 +111,16 @@ document.addEventListener('DOMContentLoaded', () => {
     // Resize Canvas
     function resizeCanvas() {
         const container = document.getElementById('game-container');
-        gameCanvas.width = container.clientWidth;
-        gameCanvas.height = container.clientHeight;
+        let width = container.clientWidth;
+        let height = container.clientHeight;
+
+        if (currentGame === 'snake') {
+            width = Math.floor(width / grid) * grid;
+            height = Math.floor(height / grid) * grid;
+        }
+
+        gameCanvas.width = width;
+        gameCanvas.height = height;
 
         // Initial state for Runner
         runnerPlayer.y = gameCanvas.height - 50;
@@ -197,14 +205,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
         if (currentGame === 'galaxy-runner') {
             obstacles = [];
+            runnerPlayer.x = gameCanvas.width / 2 - runnerPlayer.width / 2;
+            runnerPlayer.y = gameCanvas.height - 50;
         } else if (currentGame === 'snake') {
             snake = [
-                { x: 160, y: 160 },
-                { x: 140, y: 160 },
-                { x: 120, y: 160 }
+                { x: grid * 5, y: grid * 5 },
+                { x: grid * 4, y: grid * 5 },
+                { x: grid * 3, y: grid * 5 }
             ];
             dx = grid;
             dy = 0;
+            snakeSpeed = 10;
             spawnFood();
         }
 
@@ -369,9 +380,21 @@ document.addEventListener('DOMContentLoaded', () => {
         gameTitle.innerText = '게임 오버';
         document.getElementById('game-instr').innerText = `최종 점수: ${score}`;
         overlay.style.display = 'flex';
+        // Reset state for next try
+        setTimeout(() => {
+            if (overlay.style.display === 'flex') {
+                const title = currentGame === 'galaxy-runner' ? '불규칙한 똥 피하기' : '네온 스네이크';
+                gameTitle.innerText = title;
+                document.getElementById('game-instr').innerText = currentGame === 'galaxy-runner' ? '다시 도전하시겠습니까?' : '다시 도전하시겠습니까?';
+            }
+        }, 2000);
     }
 
-    startBtn.onclick = startGame;
+    startBtn.onclick = () => {
+        const title = currentGame === 'galaxy-runner' ? '불규칙한 똥 피하기' : '네온 스네이크';
+        resetGame(title);
+        startGame();
+    };
 
     // Intersection Observer
     const observer = new IntersectionObserver((entries) => {

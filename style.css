@@ -457,6 +457,19 @@ footer {
     border-radius: 0;
 }
 
+.footer-email {
+    color: var(--text-muted);
+    text-decoration: none;
+    font-size: 0.9rem;
+    transition: var(--transition-smooth);
+    margin-top: 0.5rem;
+    display: inline-block;
+}
+
+.footer-email:hover {
+    color: var(--accent-color);
+}
+
 .modal {
     display: none;
     position: fixed;
