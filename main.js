@@ -17,6 +17,49 @@ document.addEventListener('DOMContentLoaded', () => {
     const loader = document.getElementById('loader');
     const apiKeyInput = document.getElementById('gemini-api-key');
 
+    // Theme Toggle & Easter Egg
+    const themeToggle = document.getElementById('theme-toggle');
+    let themeClickCount = 0;
+
+    const setTheme = (theme) => {
+        document.documentElement.setAttribute('data-theme', theme);
+        localStorage.setItem('theme', theme);
+        themeToggle.innerText = theme === 'light' ? '☀️' : '🌙';
+    };
+
+    // Initialize Theme
+    const savedTheme = localStorage.getItem('theme') || 'dark';
+    setTheme(savedTheme);
+
+    const messageModal = document.getElementById('message-modal');
+    const closeMessageModal = document.querySelector('.close-message-modal');
+    const closeMessageBtn = document.querySelector('.close-message-btn');
+
+    if (themeToggle) {
+        themeToggle.onclick = () => {
+            const currentTheme = document.documentElement.getAttribute('data-theme');
+            const newTheme = currentTheme === 'light' ? 'dark' : 'light';
+            setTheme(newTheme);
+
+            // Easter Egg Logic
+            themeClickCount++;
+            if (themeClickCount === 30) {
+                if (messageModal) {
+                    messageModal.style.display = 'block';
+                }
+                themeClickCount = 0; // Reset after trigger
+            }
+        };
+    }
+
+    if (closeMessageModal) closeMessageModal.onclick = () => messageModal.style.display = 'none';
+    if (closeMessageBtn) closeMessageBtn.onclick = () => messageModal.style.display = 'none';
+    window.addEventListener('click', (event) => {
+        if (event.target == messageModal) {
+            messageModal.style.display = 'none';
+        }
+    });
+
     // Obfuscated API Key (Base64)
     const _k = "QUl6YVN5RFBCNkxiN3Zpai10U0ZEQWNyeXR2UWVMX2gtcC1pNnVF";
 

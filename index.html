@@ -30,6 +30,7 @@
                 <li><a href="#about">소개</a></li>
                 <li><a href="#projects">게임 목록</a></li>
                 <li><a href="#summarizer">AI 요약기</a></li>
+                <li><button id="theme-toggle" class="theme-toggle" aria-label="Toggle Theme">🌙</button></li>
             </ul>
         </nav>
     </header>
@@ -126,6 +127,20 @@
                         <button id="start-btn" class="btn btn-primary">시작</button>
                     </div>
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Message Modal (Easter Egg) -->
+    <div id="message-modal" class="modal">
+        <div class="modal-content glass-card message-modal-content">
+            <span class="close-message-modal close-modal">&times;</span>
+            <div class="message-container">
+                <h2 id="message-title">🎉 이스터 에그 🎉</h2>
+                <div class="message-body">
+                    <p>축하합니다! 30번의 클릭을 완료하셨습니다.</p>
+                </div>
+                <button class="btn btn-primary close-message-btn">확인</button>
             </div>
         </div>
     </div>
