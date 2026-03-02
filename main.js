@@ -25,7 +25,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Mobile Controls
     const mobileControls = document.getElementById('mobile-controls');
     const controlButtons = document.querySelectorAll('.control-btn');
-    const isTouchDevice = window.matchMedia('(max-width: 1024px) and (pointer: coarse)').matches;
+    const touchQuery = window.matchMedia('(pointer: coarse)');
 
     const setTheme = (theme) => {
         document.documentElement.setAttribute('data-theme', theme);
@@ -180,10 +180,14 @@ document.addEventListener('DOMContentLoaded', () => {
     let combo = 0;
     let bestCombo = 0;
 
+    function shouldShowTouchControls() {
+        return Boolean(currentGame) && gameActive && modal.style.display === 'block' && touchQuery.matches;
+    }
+
     function updateMobileControlsVisibility() {
         if (!mobileControls) return;
 
-        const shouldShowControls = Boolean(currentGame) && isTouchDevice;
+        const shouldShowControls = shouldShowTouchControls();
         mobileControls.style.display = shouldShowControls ? 'grid' : 'none';
 
         const visibleControlsByGame = {
@@ -348,6 +352,10 @@ document.addEventListener('DOMContentLoaded', () => {
         keys[e.code] = false;
     });
 
+    gameCanvas.addEventListener('touchmove', e => {
+        if (currentGame) e.preventDefault();
+    }, { passive: false });
+
     gameCanvas.addEventListener('touchstart', e => {
         e.preventDefault();
         const touchX = e.touches[0].clientX;
@@ -384,6 +392,7 @@ document.addEventListener('DOMContentLoaded', () => {
         gameTitle.innerText = title;
         gameInstr.innerText = getGameText(currentGame).instr;
         overlay.style.display = 'flex';
+        updateMobileControlsVisibility();
 
         if (currentGame === 'galaxy-runner') {
             obstacles = [];
@@ -416,12 +425,14 @@ document.addEventListener('DOMContentLoaded', () => {
             rhythmLastMissCheckedBeat = -1;
             rhythmLastHitBeat = -1;
         }
+        updateMobileControlsVisibility();
         gameLoop();
     }
 
     function stopGame() {
         gameActive = false;
         cancelAnimationFrame(animationId);
+        updateMobileControlsVisibility();
     }
 
     function spawnObstacle() {
@@ -613,6 +624,7 @@ document.addEventListener('DOMContentLoaded', () => {
         gameTitle.innerText = '리듬 챌린지 종료';
         gameInstr.innerText = `점수: ${score} | 최고 콤보: ${bestCombo}`;
         overlay.style.display = 'flex';
+        updateMobileControlsVisibility();
     }
 
     function gameOver() {
@@ -620,6 +632,7 @@ document.addEventListener('DOMContentLoaded', () => {
         gameTitle.innerText = '게임 오버';
         gameInstr.innerText = `최종 점수: ${score}`;
         overlay.style.display = 'flex';
+        updateMobileControlsVisibility();
         setTimeout(() => {
             if (overlay.style.display === 'flex') {
                 const { title } = getGameText(currentGame);
@@ -641,6 +654,8 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         updateMobileControlsVisibility();
     });
+
+    touchQuery.addEventListener('change', updateMobileControlsVisibility);
 
     const observer = new IntersectionObserver((entries) => {
         entries.forEach(entry => {
