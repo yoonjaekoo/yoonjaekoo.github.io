@@ -29,3 +29,7 @@
 
 ## 연락처
 - GitHub: [yoonjaekoo](https://github.com/yoonjaekoo)
+
+---
+
+> **README 작성**: Le Chat (Mistral AI)
