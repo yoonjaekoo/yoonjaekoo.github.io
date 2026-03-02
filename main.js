@@ -171,14 +171,19 @@ document.addEventListener('DOMContentLoaded', () => {
     let snakeSpeed = 10;
 
     // Rhythm Game State
-    const rhythmBeatInterval = 800;
-    const rhythmWindow = { perfect: 120, good: 220 };
-    const rhythmDuration = 30000;
+    const rhythmBeatInterval = 680;
+    const rhythmWindow = { perfect: 90, good: 170 };
+    const rhythmDuration = 45000;
     let rhythmStartTime = 0;
     let rhythmLastMissCheckedBeat = -1;
     let rhythmLastHitBeat = -1;
     let combo = 0;
     let bestCombo = 0;
+    let rhythmMultiplier = 1;
+    let rhythmAccuracy = { perfect: 0, good: 0, miss: 0 };
+    let rhythmJudgeText = '';
+    let rhythmJudgeColor = '#fff';
+    let rhythmJudgeTime = 0;
 
     function shouldShowTouchControls() {
         return Boolean(currentGame) && gameActive && modal.style.display === 'block' && touchQuery.matches;
@@ -223,7 +228,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function getGameText(type) {
         if (type === 'galaxy-runner') return { title: '불규칙한 똥 피하기', instr: '방향키/좌우 버튼으로 이동하세요.' };
         if (type === 'snake') return { title: '네온 스네이크', instr: '방향키/방향 버튼으로 뱀을 조종하세요.' };
-        return { title: '클릭 리듬 챌린지', instr: '비트가 원에 겹칠 때 클릭/스페이스/TAP!' };
+        return { title: '클릭 리듬 챌린지', instr: '원형 노트가 판정선에 닿을 때 클릭/스페이스/TAP!' };
     }
 
     playButtons.forEach(btn => {
@@ -273,15 +278,30 @@ document.addEventListener('DOMContentLoaded', () => {
         if (beat === rhythmLastHitBeat) return;
 
         if (diff <= rhythmWindow.perfect) {
-            score += 3;
+            rhythmJudgeText = 'PERFECT';
+            rhythmJudgeColor = '#22d3ee';
+            rhythmJudgeTime = now;
+            rhythmAccuracy.perfect++;
             combo += 1;
+            rhythmMultiplier = Math.min(4, 1 + Math.floor(combo / 8));
+            score += 4 * rhythmMultiplier;
             rhythmLastHitBeat = beat;
         } else if (diff <= rhythmWindow.good) {
-            score += 1;
+            rhythmJudgeText = 'GOOD';
+            rhythmJudgeColor = '#34d399';
+            rhythmJudgeTime = now;
+            rhythmAccuracy.good++;
             combo += 1;
+            rhythmMultiplier = Math.min(4, 1 + Math.floor(combo / 8));
+            score += 2 * rhythmMultiplier;
             rhythmLastHitBeat = beat;
         } else {
+            rhythmJudgeText = 'MISS';
+            rhythmJudgeColor = '#fb7185';
+            rhythmJudgeTime = now;
+            rhythmAccuracy.miss++;
             combo = 0;
+            rhythmMultiplier = 1;
         }
 
         bestCombo = Math.max(bestCombo, combo);
@@ -412,6 +432,11 @@ document.addEventListener('DOMContentLoaded', () => {
             rhythmStartTime = 0;
             rhythmLastMissCheckedBeat = -1;
             rhythmLastHitBeat = -1;
+            rhythmMultiplier = 1;
+            rhythmAccuracy = { perfect: 0, good: 0, miss: 0 };
+            rhythmJudgeText = '';
+            rhythmJudgeColor = '#fff';
+            rhythmJudgeTime = 0;
         }
 
         cancelAnimationFrame(animationId);
@@ -540,36 +565,63 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function updateRhythm() {
-        const elapsed = performance.now() - rhythmStartTime;
+        const now = performance.now();
+        const elapsed = now - rhythmStartTime;
         const beatFloat = elapsed / rhythmBeatInterval;
         const beatPhase = beatFloat - Math.floor(beatFloat);
         const currentBeat = Math.floor(beatFloat);
 
         if (currentBeat > rhythmLastMissCheckedBeat) {
             const missedBeat = currentBeat - 1;
-            if (missedBeat >= 0 && rhythmLastHitBeat < missedBeat) combo = 0;
+            if (missedBeat >= 0 && rhythmLastHitBeat < missedBeat) {
+                combo = 0;
+                rhythmMultiplier = 1;
+                rhythmAccuracy.miss++;
+                rhythmJudgeText = 'MISS';
+                rhythmJudgeColor = '#fb7185';
+                rhythmJudgeTime = now;
+            }
             rhythmLastMissCheckedBeat = currentBeat;
         }
 
         const centerX = gameCanvas.width / 2;
         const centerY = gameCanvas.height / 2;
-        const baseRadius = Math.min(gameCanvas.width, gameCanvas.height) * 0.18;
-        const pulseRadius = baseRadius + beatPhase * baseRadius * 1.3;
+        const baseRadius = Math.min(gameCanvas.width, gameCanvas.height) * 0.16;
+        const judgementRadius = baseRadius * 2.6;
+        const pulseRadius = baseRadius + beatPhase * baseRadius * 1.9;
+        const pulseAlpha = Math.max(0.2, 1 - beatPhase * 0.85);
 
         ctx.fillStyle = '#020617';
         ctx.fillRect(0, 0, gameCanvas.width, gameCanvas.height);
 
-        ctx.strokeStyle = '#16e0bd';
-        ctx.lineWidth = 5;
+        // beat grid lines
+        ctx.strokeStyle = 'rgba(148, 163, 184, 0.15)';
+        ctx.lineWidth = 1;
+        for (let i = 0; i < 5; i++) {
+            const y = (gameCanvas.height / 5) * i;
+            ctx.beginPath();
+            ctx.moveTo(0, y);
+            ctx.lineTo(gameCanvas.width, y);
+            ctx.stroke();
+        }
+
+        ctx.strokeStyle = 'rgba(34, 211, 238, 0.9)';
+        ctx.lineWidth = 6;
         ctx.beginPath();
-        ctx.arc(centerX, centerY, baseRadius * 2.1, 0, Math.PI * 2);
+        ctx.arc(centerX, centerY, judgementRadius, 0, Math.PI * 2);
         ctx.stroke();
 
-        ctx.strokeStyle = 'rgba(120, 195, 251, 0.85)';
-        ctx.lineWidth = 8;
+        ctx.strokeStyle = `rgba(22, 224, 189, ${pulseAlpha})`;
+        ctx.lineWidth = 9;
         ctx.beginPath();
         ctx.arc(centerX, centerY, pulseRadius, 0, Math.PI * 2);
         ctx.stroke();
+
+        // center marker
+        ctx.fillStyle = '#0ea5e9';
+        ctx.beginPath();
+        ctx.arc(centerX, centerY, baseRadius * 0.52, 0, Math.PI * 2);
+        ctx.fill();
 
         ctx.fillStyle = '#f8fafc';
         ctx.font = '600 22px Outfit';
@@ -578,14 +630,32 @@ document.addEventListener('DOMContentLoaded', () => {
 
         drawScore();
         ctx.fillStyle = '#fff';
-        ctx.font = '18px Outfit';
+        ctx.font = '16px Outfit';
         ctx.textAlign = 'left';
         ctx.fillText(`콤보: ${combo}`, 20, 70);
-        ctx.fillText(`최고 콤보: ${bestCombo}`, 20, 98);
+        ctx.fillText(`배수: x${rhythmMultiplier}`, 20, 96);
+        ctx.fillText(`최고 콤보: ${bestCombo}`, 20, 122);
+
+        const totalHits = rhythmAccuracy.perfect + rhythmAccuracy.good + rhythmAccuracy.miss;
+        const accuracy = totalHits ? Math.round(((rhythmAccuracy.perfect + rhythmAccuracy.good * 0.6) / totalHits) * 100) : 100;
+        ctx.textAlign = 'right';
+        ctx.fillText(`정확도: ${accuracy}%`, gameCanvas.width - 20, 70);
+        ctx.fillText(`P:${rhythmAccuracy.perfect} G:${rhythmAccuracy.good} M:${rhythmAccuracy.miss}`, gameCanvas.width - 20, 96);
 
         const remain = Math.max(0, Math.ceil((rhythmDuration - elapsed) / 1000));
         ctx.textAlign = 'right';
         ctx.fillText(`남은 시간: ${remain}s`, gameCanvas.width - 20, 40);
+
+        if (rhythmJudgeText && now - rhythmJudgeTime < 520) {
+            const judgeProgress = (now - rhythmJudgeTime) / 520;
+            const yOffset = 40 * judgeProgress;
+            ctx.globalAlpha = 1 - judgeProgress;
+            ctx.fillStyle = rhythmJudgeColor;
+            ctx.textAlign = 'center';
+            ctx.font = '700 28px Outfit';
+            ctx.fillText(rhythmJudgeText, centerX, centerY - judgementRadius - 30 - yOffset);
+            ctx.globalAlpha = 1;
+        }
 
         if (elapsed >= rhythmDuration) {
             rhythmGameOver();
@@ -622,7 +692,9 @@ document.addEventListener('DOMContentLoaded', () => {
     function rhythmGameOver() {
         gameActive = false;
         gameTitle.innerText = '리듬 챌린지 종료';
-        gameInstr.innerText = `점수: ${score} | 최고 콤보: ${bestCombo}`;
+        const totalHits = rhythmAccuracy.perfect + rhythmAccuracy.good + rhythmAccuracy.miss;
+        const accuracy = totalHits ? Math.round(((rhythmAccuracy.perfect + rhythmAccuracy.good * 0.6) / totalHits) * 100) : 100;
+        gameInstr.innerText = `점수: ${score} | 최고 콤보: ${bestCombo} | 정확도: ${accuracy}%`;
         overlay.style.display = 'flex';
         updateMobileControlsVisibility();
     }
