@@ -173,7 +173,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Rhythm Game State
     const rhythmBeatInterval = 680;
     const rhythmWindow = { perfect: 90, good: 170 };
-    const rhythmDuration = 45000;
+    const rhythmDuration = 90000;
     let rhythmStartTime = 0;
     let rhythmLastMissCheckedBeat = -1;
     let rhythmLastHitBeat = -1;
@@ -184,6 +184,26 @@ document.addEventListener('DOMContentLoaded', () => {
     let rhythmJudgeText = '';
     let rhythmJudgeColor = '#fff';
     let rhythmJudgeTime = 0;
+    const rhythmAudio = new Audio('R.ogg');
+    rhythmAudio.preload = 'auto';
+    let rhythmAudioReady = false;
+
+    rhythmAudio.addEventListener('canplaythrough', () => {
+        rhythmAudioReady = true;
+    });
+
+    rhythmAudio.addEventListener('ended', () => {
+        if (currentGame === 'rhythm' && gameActive) {
+            rhythmGameOver();
+        }
+    });
+
+    function getRhythmElapsedMs() {
+        if (rhythmAudioReady && !Number.isNaN(rhythmAudio.currentTime) && rhythmAudio.currentTime > 0) {
+            return rhythmAudio.currentTime * 1000;
+        }
+        return performance.now() - rhythmStartTime;
+    }
 
     function shouldShowTouchControls() {
         return Boolean(currentGame) && gameActive && modal.style.display === 'block' && touchQuery.matches;
@@ -228,7 +248,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function getGameText(type) {
         if (type === 'galaxy-runner') return { title: '불규칙한 똥 피하기', instr: '방향키/좌우 버튼으로 이동하세요.' };
         if (type === 'snake') return { title: '네온 스네이크', instr: '방향키/방향 버튼으로 뱀을 조종하세요.' };
-        return { title: '클릭 리듬 챌린지', instr: '원형 노트가 판정선에 닿을 때 클릭/스페이스/TAP!' };
+        return { title: '클릭 리듬 챌린지', instr: '원형 노트가 판정선에 닿을 때 클릭/스페이스/TAP! (1분 30초)' };
     }
 
     playButtons.forEach(btn => {
@@ -270,7 +290,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function rhythmTap() {
         if (!gameActive || currentGame !== 'rhythm') return;
         const now = performance.now();
-        const elapsed = now - rhythmStartTime;
+        const elapsed = getRhythmElapsedMs();
         const beat = Math.round(elapsed / rhythmBeatInterval);
         const beatTime = beat * rhythmBeatInterval;
         const diff = Math.abs(elapsed - beatTime);
@@ -437,6 +457,8 @@ document.addEventListener('DOMContentLoaded', () => {
             rhythmJudgeText = '';
             rhythmJudgeColor = '#fff';
             rhythmJudgeTime = 0;
+            rhythmAudio.pause();
+            rhythmAudio.currentTime = 0;
         }
 
         cancelAnimationFrame(animationId);
@@ -449,6 +471,10 @@ document.addEventListener('DOMContentLoaded', () => {
             rhythmStartTime = performance.now();
             rhythmLastMissCheckedBeat = -1;
             rhythmLastHitBeat = -1;
+            rhythmAudio.currentTime = 0;
+            rhythmAudio.play().catch(() => {
+                rhythmAudioReady = false;
+            });
         }
         updateMobileControlsVisibility();
         gameLoop();
@@ -457,6 +483,10 @@ document.addEventListener('DOMContentLoaded', () => {
     function stopGame() {
         gameActive = false;
         cancelAnimationFrame(animationId);
+        if (currentGame === 'rhythm') {
+            rhythmAudio.pause();
+            rhythmAudio.currentTime = 0;
+        }
         updateMobileControlsVisibility();
     }
 
@@ -566,7 +596,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function updateRhythm() {
         const now = performance.now();
-        const elapsed = now - rhythmStartTime;
+        const elapsed = getRhythmElapsedMs();
         const beatFloat = elapsed / rhythmBeatInterval;
         const beatPhase = beatFloat - Math.floor(beatFloat);
         const currentBeat = Math.floor(beatFloat);
@@ -691,6 +721,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function rhythmGameOver() {
         gameActive = false;
+        rhythmAudio.pause();
         gameTitle.innerText = '리듬 챌린지 종료';
         const totalHits = rhythmAccuracy.perfect + rhythmAccuracy.good + rhythmAccuracy.miss;
         const accuracy = totalHits ? Math.round(((rhythmAccuracy.perfect + rhythmAccuracy.good * 0.6) / totalHits) * 100) : 100;
