@@ -337,6 +337,13 @@ nav ul li a:hover::after {
     width: 100%;
 }
 
+.rhythm-preview {
+    background:
+        radial-gradient(circle at 20% 20%, rgba(120, 195, 251, 0.9), transparent 45%),
+        radial-gradient(circle at 80% 70%, rgba(22, 224, 189, 0.8), transparent 42%),
+        linear-gradient(120deg, #111827, #1f2937 55%, #0f172a);
+}
+
 .project-info {
     padding: 1.5rem;
 }
@@ -604,6 +611,34 @@ footer {
     display: block;
 }
 
+.mobile-controls {
+    position: absolute;
+    bottom: 12px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: calc(100% - 24px);
+    display: none;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 0.5rem;
+    z-index: 12;
+}
+
+.control-btn {
+    border: 1px solid var(--glass-border);
+    border-radius: 14px;
+    background: rgba(15, 23, 42, 0.6);
+    color: #fff;
+    font-weight: 700;
+    min-height: 48px;
+    cursor: pointer;
+    touch-action: manipulation;
+}
+
+.control-btn.active {
+    background: rgba(22, 224, 189, 0.8);
+    color: #042f2e;
+}
+
 .overlay {
     position: absolute;
     top: 0;
@@ -690,6 +725,13 @@ footer {
     .menu-toggle.is-active .bar:nth-child(3) {
         transform: translateY(-8px) rotate(-45deg);
     }
+
+    .modal-content {
+        width: 95%;
+        height: 85vh;
+        margin: 3vh auto;
+    }
+
 }
 
 .menu-toggle {

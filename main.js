@@ -7,6 +7,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const overlay = document.getElementById('game-overlay');
     const gameTitle = document.getElementById('game-title');
     const gameCanvas = document.getElementById('game-canvas');
+    const gameInstr = document.getElementById('game-instr');
     const ctx = gameCanvas.getContext('2d');
 
     // Summarizer UI Elements
@@ -20,6 +21,11 @@ document.addEventListener('DOMContentLoaded', () => {
     // Theme Toggle & Easter Egg
     const themeToggle = document.getElementById('theme-toggle');
     let themeClickCount = 0;
+
+    // Mobile Controls
+    const mobileControls = document.getElementById('mobile-controls');
+    const controlButtons = document.querySelectorAll('.control-btn');
+    const isTouchDevice = window.matchMedia('(max-width: 1024px) and (pointer: coarse)').matches;
 
     const setTheme = (theme) => {
         document.documentElement.setAttribute('data-theme', theme);
@@ -41,13 +47,12 @@ document.addEventListener('DOMContentLoaded', () => {
             const newTheme = currentTheme === 'light' ? 'dark' : 'light';
             setTheme(newTheme);
 
-            // Easter Egg Logic
             themeClickCount++;
             if (themeClickCount === 30) {
                 if (messageModal) {
                     messageModal.style.display = 'block';
                 }
-                themeClickCount = 0; // Reset after trigger
+                themeClickCount = 0;
             }
         };
     }
@@ -63,7 +68,6 @@ document.addEventListener('DOMContentLoaded', () => {
         };
     }
 
-    // Close mobile menu when a link is clicked
     document.querySelectorAll('#nav-list li a').forEach(link => {
         link.onclick = () => {
             mobileMenu.classList.remove('is-active');
@@ -80,7 +84,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // Obfuscated API Key (Base64)
-    const _k = "QUl6YVN5RFBCNkxiN3Zpai10U0ZEQWNyeXR2UWVMX2gtcC1pNnVF";
+    const _k = 'QUl6YVN5RFBCNkxiN3Zpai10U0ZEQWNyeXR2UWVMX2gtcC1pNnVF';
 
     if (summarizeBtn) {
         summarizeBtn.onclick = async () => {
@@ -92,7 +96,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
 
-            // Use the stored key if input is empty
             if (!apiKey) {
                 apiKey = atob(_k);
             }
@@ -102,7 +105,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
 
-            // UI Reset
             summaryResult.style.display = 'none';
             loader.style.display = 'block';
             summarizeBtn.disabled = true;
@@ -145,11 +147,9 @@ document.addEventListener('DOMContentLoaded', () => {
     let animationId;
     let score = 0;
     let currentGame = '';
-
-    // Common Game State
     let frameCount = 0;
 
-    // Runner Game State (똥 피하기)
+    // Runner Game State
     const runnerPlayer = {
         x: 0,
         y: 0,
@@ -168,9 +168,37 @@ document.addEventListener('DOMContentLoaded', () => {
     let food = { x: 0, y: 0 };
     let dx = grid;
     let dy = 0;
-    let snakeSpeed = 10; // Increased from 7 to slow down (Frames per move)
+    let snakeSpeed = 10;
 
-    // Resize Canvas
+    // Rhythm Game State
+    const rhythmBeatInterval = 800;
+    const rhythmWindow = { perfect: 120, good: 220 };
+    const rhythmDuration = 30000;
+    let rhythmStartTime = 0;
+    let rhythmLastMissCheckedBeat = -1;
+    let rhythmLastHitBeat = -1;
+    let combo = 0;
+    let bestCombo = 0;
+
+    function updateMobileControlsVisibility() {
+        if (!mobileControls) return;
+
+        const shouldShowControls = Boolean(currentGame) && isTouchDevice;
+        mobileControls.style.display = shouldShowControls ? 'grid' : 'none';
+
+        const visibleControlsByGame = {
+            'galaxy-runner': new Set(['left', 'right']),
+            snake: new Set(['left', 'up', 'down', 'right']),
+            rhythm: new Set(['action'])
+        };
+        const visibleControls = visibleControlsByGame[currentGame] || new Set();
+
+        controlButtons.forEach(btn => {
+            btn.classList.remove('active');
+            btn.style.visibility = visibleControls.has(btn.dataset.control) ? 'visible' : 'hidden';
+        });
+    }
+
     function resizeCanvas() {
         const container = document.getElementById('game-container');
         let width = container.clientWidth;
@@ -184,55 +212,144 @@ document.addEventListener('DOMContentLoaded', () => {
         gameCanvas.width = width;
         gameCanvas.height = height;
 
-        // Initial state for Runner
         runnerPlayer.y = gameCanvas.height - 50;
         runnerPlayer.x = gameCanvas.width / 2 - runnerPlayer.width / 2;
     }
 
-    // Modal Logic
+    function getGameText(type) {
+        if (type === 'galaxy-runner') return { title: '불규칙한 똥 피하기', instr: '방향키/좌우 버튼으로 이동하세요.' };
+        if (type === 'snake') return { title: '네온 스네이크', instr: '방향키/방향 버튼으로 뱀을 조종하세요.' };
+        return { title: '클릭 리듬 챌린지', instr: '비트가 원에 겹칠 때 클릭/스페이스/TAP!' };
+    }
+
     playButtons.forEach(btn => {
         btn.onclick = () => {
             currentGame = btn.getAttribute('data-game');
             modal.style.display = 'block';
             resizeCanvas();
-            const title = currentGame === 'galaxy-runner' ? '불규칙한 똥 피하기' : '네온 스네이크';
+            const { title } = getGameText(currentGame);
             resetGame(title);
+            updateMobileControlsVisibility();
         };
     });
 
     closeBtn.onclick = () => {
         modal.style.display = 'none';
         stopGame();
+        currentGame = '';
+        updateMobileControlsVisibility();
     };
 
     window.onclick = (event) => {
         if (event.target == modal) {
             modal.style.display = 'none';
             stopGame();
+            currentGame = '';
+            updateMobileControlsVisibility();
         }
     };
 
-    // Input Handling
     const keys = {};
+
+    function setSnakeDirection(direction) {
+        if (direction === 'left' && dx === 0) { dx = -grid; dy = 0; }
+        if (direction === 'up' && dy === 0) { dy = -grid; dx = 0; }
+        if (direction === 'right' && dx === 0) { dx = grid; dy = 0; }
+        if (direction === 'down' && dy === 0) { dy = grid; dx = 0; }
+    }
+
+    function rhythmTap() {
+        if (!gameActive || currentGame !== 'rhythm') return;
+        const now = performance.now();
+        const elapsed = now - rhythmStartTime;
+        const beat = Math.round(elapsed / rhythmBeatInterval);
+        const beatTime = beat * rhythmBeatInterval;
+        const diff = Math.abs(elapsed - beatTime);
+
+        if (beat === rhythmLastHitBeat) return;
+
+        if (diff <= rhythmWindow.perfect) {
+            score += 3;
+            combo += 1;
+            rhythmLastHitBeat = beat;
+        } else if (diff <= rhythmWindow.good) {
+            score += 1;
+            combo += 1;
+            rhythmLastHitBeat = beat;
+        } else {
+            combo = 0;
+        }
+
+        bestCombo = Math.max(bestCombo, combo);
+    }
+
+    function pressControl(control) {
+        if (!gameActive) return;
+        if (currentGame === 'snake') {
+            setSnakeDirection(control);
+            return;
+        }
+        if (currentGame === 'galaxy-runner') {
+            if (control === 'left') keys.ArrowLeft = true;
+            if (control === 'right') keys.ArrowRight = true;
+            return;
+        }
+        if (currentGame === 'rhythm' && control === 'action') {
+            rhythmTap();
+        }
+    }
+
+    function releaseControl(control) {
+        if (currentGame !== 'galaxy-runner') return;
+        if (control === 'left') keys.ArrowLeft = false;
+        if (control === 'right') keys.ArrowRight = false;
+    }
+
+    controlButtons.forEach(button => {
+        const control = button.dataset.control;
+        const activate = (event) => {
+            event.preventDefault();
+            button.classList.add('active');
+            pressControl(control);
+        };
+        const deactivate = () => {
+            button.classList.remove('active');
+            releaseControl(control);
+        };
+
+        button.addEventListener('touchstart', activate, { passive: false });
+        button.addEventListener('touchend', deactivate);
+        button.addEventListener('touchcancel', deactivate);
+        button.addEventListener('mousedown', activate);
+        button.addEventListener('mouseup', deactivate);
+        button.addEventListener('mouseleave', deactivate);
+    });
+
     window.addEventListener('keydown', e => {
         keys[e.code] = true;
-        // Prevent default scrolling for game keys
+
         if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Space'].includes(e.code)) {
             e.preventDefault();
         }
 
-        // Snake specific direction change (prevent 180 degree turns)
         if (currentGame === 'snake') {
-            if (e.code === 'ArrowLeft' && dx === 0) { dx = -grid; dy = 0; }
-            if (e.code === 'ArrowUp' && dy === 0) { dy = -grid; dx = 0; }
-            if (e.code === 'ArrowRight' && dx === 0) { dx = grid; dy = 0; }
-            if (e.code === 'ArrowDown' && dy === 0) { dy = grid; dx = 0; }
+            if (e.code === 'ArrowLeft') setSnakeDirection('left');
+            if (e.code === 'ArrowUp') setSnakeDirection('up');
+            if (e.code === 'ArrowRight') setSnakeDirection('right');
+            if (e.code === 'ArrowDown') setSnakeDirection('down');
+        }
+
+        if (currentGame === 'rhythm' && (e.code === 'Space' || e.code === 'Enter')) {
+            rhythmTap();
         }
     });
-    window.addEventListener('keyup', e => keys[e.code] = false);
 
-    // Mobile Input
+    window.addEventListener('keyup', e => {
+        keys[e.code] = false;
+    });
+
     gameCanvas.addEventListener('touchstart', e => {
+        e.preventDefault();
         const touchX = e.touches[0].clientX;
         const touchY = e.touches[0].clientY;
         const rect = gameCanvas.getBoundingClientRect();
@@ -243,26 +360,29 @@ document.addEventListener('DOMContentLoaded', () => {
             if (canvasX < gameCanvas.width / 2) runnerPlayer.x -= runnerPlayer.speed * 3;
             else runnerPlayer.x += runnerPlayer.speed * 3;
         } else if (currentGame === 'snake') {
-            // Simple 4-way tap logic for snake
             const centerX = gameCanvas.width / 2;
             const centerY = gameCanvas.height / 2;
             if (Math.abs(canvasX - centerX) > Math.abs(canvasY - centerY)) {
-                if (canvasX < centerX && dx === 0) { dx = -grid; dy = 0; }
-                else if (canvasX > centerX && dx === 0) { dx = grid; dy = 0; }
+                if (canvasX < centerX) setSnakeDirection('left');
+                else setSnakeDirection('right');
+            } else if (canvasY < centerY) {
+                setSnakeDirection('up');
             } else {
-                if (canvasY < centerY && dy === 0) { dy = -grid; dx = 0; }
-                else if (canvasY > centerY && dy === 0) { dy = grid; dx = 0; }
+                setSnakeDirection('down');
             }
+        } else if (currentGame === 'rhythm') {
+            rhythmTap();
         }
-    });
+    }, { passive: false });
 
-    // Game Functions
     function resetGame(title) {
         gameActive = false;
         score = 0;
+        combo = 0;
+        bestCombo = 0;
         frameCount = 0;
         gameTitle.innerText = title;
-        document.getElementById('game-instr').innerText = currentGame === 'galaxy-runner' ? '방향키 또는 터치로 이동하세요.' : '방향키로 뱀을 조종하세요.';
+        gameInstr.innerText = getGameText(currentGame).instr;
         overlay.style.display = 'flex';
 
         if (currentGame === 'galaxy-runner') {
@@ -279,6 +399,10 @@ document.addEventListener('DOMContentLoaded', () => {
             dy = 0;
             snakeSpeed = 10;
             spawnFood();
+        } else if (currentGame === 'rhythm') {
+            rhythmStartTime = 0;
+            rhythmLastMissCheckedBeat = -1;
+            rhythmLastHitBeat = -1;
         }
 
         cancelAnimationFrame(animationId);
@@ -287,6 +411,11 @@ document.addEventListener('DOMContentLoaded', () => {
     function startGame() {
         overlay.style.display = 'none';
         gameActive = true;
+        if (currentGame === 'rhythm') {
+            rhythmStartTime = performance.now();
+            rhythmLastMissCheckedBeat = -1;
+            rhythmLastHitBeat = -1;
+        }
         gameLoop();
     }
 
@@ -295,19 +424,17 @@ document.addEventListener('DOMContentLoaded', () => {
         cancelAnimationFrame(animationId);
     }
 
-    // Runner Specific Functions
     function spawnObstacle() {
         const width = Math.random() * 60 + 20;
         obstacles.push({
             x: Math.random() * (gameCanvas.width - width),
             y: -50,
-            width: width,
-            height: width * 0.8, // Irregular height
-            color: '#795548' // Brown for "Poo"
+            width,
+            height: width * 0.8,
+            color: '#795548'
         });
     }
 
-    // Snake Specific Functions
     function spawnFood() {
         food.x = Math.floor(Math.random() * (gameCanvas.width / grid)) * grid;
         food.y = Math.floor(Math.random() * (gameCanvas.height / grid)) * grid;
@@ -323,32 +450,30 @@ document.addEventListener('DOMContentLoaded', () => {
             updateRunner();
         } else if (currentGame === 'snake') {
             updateSnake();
+        } else if (currentGame === 'rhythm') {
+            updateRhythm();
         }
 
         animationId = requestAnimationFrame(gameLoop);
     }
 
     function updateRunner() {
-        // Move Player
-        if (keys['ArrowLeft'] || keys['KeyA']) runnerPlayer.x -= runnerPlayer.speed;
-        if (keys['ArrowRight'] || keys['KeyD']) runnerPlayer.x += runnerPlayer.speed;
+        if (keys.ArrowLeft || keys.KeyA) runnerPlayer.x -= runnerPlayer.speed;
+        if (keys.ArrowRight || keys.KeyD) runnerPlayer.x += runnerPlayer.speed;
 
         if (runnerPlayer.x < 0) runnerPlayer.x = 0;
         if (runnerPlayer.x + runnerPlayer.width > gameCanvas.width) runnerPlayer.x = gameCanvas.width - runnerPlayer.width;
 
-        // Draw Player
         ctx.fillStyle = runnerPlayer.color;
         ctx.beginPath();
         ctx.roundRect(runnerPlayer.x, runnerPlayer.y, runnerPlayer.width, runnerPlayer.height, 5);
         ctx.fill();
 
-        // Handle Obstacles
         if (frameCount % obstacleFrequency === 0) spawnObstacle();
 
         obstacles.forEach((obs, index) => {
             obs.y += obstacleSpeed + (score / 15);
 
-            // Draw "Poo" (Irregular circle)
             ctx.fillStyle = obs.color;
             ctx.beginPath();
             ctx.ellipse(obs.x + obs.width / 2, obs.y + obs.height / 2, obs.width / 2, obs.height / 2, 0, 0, Math.PI * 2);
@@ -369,12 +494,10 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
 
-        // Draw Score
         drawScore();
     }
 
     function updateSnake() {
-        // Slow down snake updates
         if (frameCount % snakeSpeed !== 0) {
             drawSnake();
             drawScore();
@@ -383,23 +506,19 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const head = { x: snake[0].x + dx, y: snake[0].y + dy };
 
-        // Wall Collision
         if (head.x < 0 || head.x >= gameCanvas.width || head.y < 0 || head.y >= gameCanvas.height) {
             return gameOver();
         }
 
-        // Self Collision
         for (let i = 0; i < snake.length; i++) {
             if (head.x === snake[i].x && head.y === snake[i].y) return gameOver();
         }
 
         snake.unshift(head);
 
-        // Food Collision
         if (head.x === food.x && head.y === food.y) {
             score++;
             spawnFood();
-            // Slower speedup: every 7 points, and min speed is 4
             if (score % 7 === 0 && snakeSpeed > 4) snakeSpeed--;
         } else {
             snake.pop();
@@ -409,8 +528,60 @@ document.addEventListener('DOMContentLoaded', () => {
         drawScore();
     }
 
+    function updateRhythm() {
+        const elapsed = performance.now() - rhythmStartTime;
+        const beatFloat = elapsed / rhythmBeatInterval;
+        const beatPhase = beatFloat - Math.floor(beatFloat);
+        const currentBeat = Math.floor(beatFloat);
+
+        if (currentBeat > rhythmLastMissCheckedBeat) {
+            const missedBeat = currentBeat - 1;
+            if (missedBeat >= 0 && rhythmLastHitBeat < missedBeat) combo = 0;
+            rhythmLastMissCheckedBeat = currentBeat;
+        }
+
+        const centerX = gameCanvas.width / 2;
+        const centerY = gameCanvas.height / 2;
+        const baseRadius = Math.min(gameCanvas.width, gameCanvas.height) * 0.18;
+        const pulseRadius = baseRadius + beatPhase * baseRadius * 1.3;
+
+        ctx.fillStyle = '#020617';
+        ctx.fillRect(0, 0, gameCanvas.width, gameCanvas.height);
+
+        ctx.strokeStyle = '#16e0bd';
+        ctx.lineWidth = 5;
+        ctx.beginPath();
+        ctx.arc(centerX, centerY, baseRadius * 2.1, 0, Math.PI * 2);
+        ctx.stroke();
+
+        ctx.strokeStyle = 'rgba(120, 195, 251, 0.85)';
+        ctx.lineWidth = 8;
+        ctx.beginPath();
+        ctx.arc(centerX, centerY, pulseRadius, 0, Math.PI * 2);
+        ctx.stroke();
+
+        ctx.fillStyle = '#f8fafc';
+        ctx.font = '600 22px Outfit';
+        ctx.textAlign = 'center';
+        ctx.fillText('TAP!', centerX, centerY + 8);
+
+        drawScore();
+        ctx.fillStyle = '#fff';
+        ctx.font = '18px Outfit';
+        ctx.textAlign = 'left';
+        ctx.fillText(`콤보: ${combo}`, 20, 70);
+        ctx.fillText(`최고 콤보: ${bestCombo}`, 20, 98);
+
+        const remain = Math.max(0, Math.ceil((rhythmDuration - elapsed) / 1000));
+        ctx.textAlign = 'right';
+        ctx.fillText(`남은 시간: ${remain}s`, gameCanvas.width - 20, 40);
+
+        if (elapsed >= rhythmDuration) {
+            rhythmGameOver();
+        }
+    }
+
     function drawSnake() {
-        // Draw Food (Neon Pulse)
         ctx.fillStyle = '#f43f5e';
         ctx.shadowBlur = 15;
         ctx.shadowColor = '#f43f5e';
@@ -419,7 +590,6 @@ document.addEventListener('DOMContentLoaded', () => {
         ctx.fill();
         ctx.shadowBlur = 0;
 
-        // Draw Snake
         snake.forEach((part, index) => {
             ctx.fillStyle = index === 0 ? '#10b981' : '#34d399';
             ctx.shadowBlur = index === 0 ? 10 : 0;
@@ -434,31 +604,44 @@ document.addEventListener('DOMContentLoaded', () => {
     function drawScore() {
         ctx.fillStyle = '#fff';
         ctx.font = '20px Outfit';
+        ctx.textAlign = 'left';
         ctx.fillText(`점수: ${score}`, 20, 40);
+    }
+
+    function rhythmGameOver() {
+        gameActive = false;
+        gameTitle.innerText = '리듬 챌린지 종료';
+        gameInstr.innerText = `점수: ${score} | 최고 콤보: ${bestCombo}`;
+        overlay.style.display = 'flex';
     }
 
     function gameOver() {
         gameActive = false;
         gameTitle.innerText = '게임 오버';
-        document.getElementById('game-instr').innerText = `최종 점수: ${score}`;
+        gameInstr.innerText = `최종 점수: ${score}`;
         overlay.style.display = 'flex';
-        // Reset state for next try
         setTimeout(() => {
             if (overlay.style.display === 'flex') {
-                const title = currentGame === 'galaxy-runner' ? '불규칙한 똥 피하기' : '네온 스네이크';
+                const { title } = getGameText(currentGame);
                 gameTitle.innerText = title;
-                document.getElementById('game-instr').innerText = currentGame === 'galaxy-runner' ? '다시 도전하시겠습니까?' : '다시 도전하시겠습니까?';
+                gameInstr.innerText = '다시 도전하시겠습니까?';
             }
         }, 2000);
     }
 
     startBtn.onclick = () => {
-        const title = currentGame === 'galaxy-runner' ? '불규칙한 똥 피하기' : '네온 스네이크';
+        const { title } = getGameText(currentGame);
         resetGame(title);
         startGame();
     };
 
-    // Intersection Observer
+    window.addEventListener('resize', () => {
+        if (modal && modal.style.display === 'block' && currentGame) {
+            resizeCanvas();
+        }
+        updateMobileControlsVisibility();
+    });
+
     const observer = new IntersectionObserver((entries) => {
         entries.forEach(entry => {
             if (entry.isIntersecting) {
@@ -468,6 +651,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }, { threshold: 0.1 });
 
     document.querySelectorAll('.reveal-text').forEach(el => {
+        observer.observe(el);
         el.style.opacity = '1';
         el.style.transform = 'translateY(0)';
     });
